@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>কেমিস্ট্রি ১ম অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "নিচের কোনটি ঋণাত্মক প্রভাবক (negative catalyst)?",
+          options: {
+            A: "SO₃",
+            B: "Glycerin",
+            C: "SO₂",
+            D: "Na",
+          },
+          correct: "B",
+          explanation:
+            "<p>ঋণাত্মক প্রভাবক বা প্রভাবক বিষ (inhibitor) হলো এমন পদার্থ যা রাসায়নিক বিক্রিয়ার গতিকে হ্রাস করে। গ্লিসারিন হাইড্রোজেন পারক্সাইড (H₂O₂) এর বিয়োজনকে ধীর করে দেয়, তাই এটিকে ঋণাত্মক প্রভাবক হিসেবে ব্যবহার করা হয়। SO₃, SO₂ এবং Na সাধারণত ঋণাত্মক প্রভাবক হিসেবে কাজ করে না।</p>",
+        },
+        {
+          id: 2,
+          question:
+            "CH₄ + H₂O → CO + 3H₂ বিক্রিয়ায় কোন প্রভাবকটি ব্যবহৃত হয়েছে?",
+          options: {
+            A: "K₂O",
+            B: "Ni",
+            C: "Mo",
+            D: "Al₂O₃",
+          },
+          correct: "B",
+          explanation:
+            "<p>মিথেন (CH₄) এবং জলীয় বাষ্প (H₂O) এর বিক্রিয়ায় কার্বন মনোক্সাইড (CO) এবং হাইড্রোজেন (H₂) উৎপন্ন হয়, যা স্টিম রিফর্মিং (steam reforming) নামে পরিচিত। এই প্রক্রিয়ায় সাধারণত নিকেল (Ni) প্রভাবক হিসেবে ব্যবহৃত হয়। নিকেল উচ্চ তাপমাত্রায় বিক্রিয়ার সক্রিয়করণ শক্তি হ্রাস করে এবং শিল্পক্ষেত্রে হাইড্রোজেন উৎপাদনে এটি একটি গুরুত্বপূর্ণ প্রভাবক।</p>",
+        },
+        {
+          id: 3,
+          question: "নিচের কোনটি প্রভাবক বিষ?",
+          options: {
+            A: "CaO",
+            B: "Al₂O₃",
+            C: "As₂O₃",
+            D: "Ni",
+          },
+          correct: "C",
+          explanation:
+            "<p>প্রভাবক বিষ (catalyst poison) এমন পদার্থ যা প্রভাবকের কার্যকারিতা নষ্ট করে বা হ্রাস করে। আর্সেনিক ট্রাইঅক্সাইড (As₂O₃) একটি পরিচিত প্রভাবক বিষ। এটি হেবার-বশ প্রক্রিয়ায় আয়রন প্রভাবকের কার্যকারিতা কমিয়ে দেয় এবং স্পর্শ পদ্ধতিতে সালফিউরিক অ্যাসিড উৎপাদনে প্লাটিনাম প্রভাবকের কার্যকারিতা নষ্ট করে। CaO, Al₂O₃, এবং Ni সাধারণত প্রভাবক বিষ হিসেবে কাজ করে না।</p>",
+        },
+        {
+          id: 4,
+          question:
+            "C₁₂H₂₂O₁₁ + H₂O → C₆H₁₂O₆ + C₆H₁₂O₆ বিক্রিয়ায় প্রভাবক হিসেবে কাজ করে কোনটি?",
+          options: {
+            A: "নিকেল",
+            B: "কপার",
+            C: "খনিজ এসিড",
+            D: "Al₂O₃",
+          },
+          correct: "C",
+          explanation:
+            "<p>এই বিক্রিয়াটি হলো সুক্রোজ (C₁₂H₂₂O₁₁) এর আর্দ্র বিশ্লেষণ, যা গ্লুকোজ (C₆H₁₂O₆) এবং ফ্রুক্টোজ (C₆H₁₂O₆) উৎপন্ন করে। এই বিক্রিয়াটি অ্যাসিডের উপস্থিতিতে ত্বরান্বিত হয়, যেমন খনিজ অ্যাসিড (যেমন HCl বা H₂SO₄)। খনিজ অ্যাসিড এখানে একটি প্রভাবক হিসেবে কাজ করে, যা বিক্রিয়ার সক্রিয়করণ শক্তি কমিয়ে দেয় এবং এর গতি বাড়ায়।</p>",
+        },
+        {
+          id: 5,
+          question: "অনুঘটকের বৈশিষ্ট্য নয় কোনটি?",
+          options: {
+            A: "বিক্রিয়া শেষে মোট ভরের অথবা গঠনের কোনরূপ পরিবর্তন হয় না",
+            B: "প্রভাবক বিক্রিয়া আরম্ভ বা বন্ধ করতে পারে",
+            C: "বিক্রিয়ার গতিকে প্রভাবিত করার জন্য সামান্য পরিমাণ প্রভাবকই যথেষ্ট",
+            D: "কোন নির্দিষ্ট বিক্রিয়ার জন্য প্রভাবকও নির্দিষ্ট",
+          },
+          correct: "B",
+          explanation:
+            "<p>প্রভাবক রাসায়নিক বিক্রিয়া আরম্ভ বা বন্ধ করতে পারে না। এটি শুধুমাত্র বিক্রিয়ার গতিকে পরিবর্তন করে। এটি বিক্রিয়ার সক্রিয়করণ শক্তি পরিবর্তন করে, যার ফলে বিক্রিয়া দ্রুত বা ধীর হতে পারে, কিন্তু এটি এমন একটি বিক্রিয়া শুরু করতে পারে না যা এমনিতেই ঘটবে না। অন্যান্য বৈশিষ্ট্যগুলো সঠিক: বিক্রিয়া শেষে প্রভাবকের ভর বা গঠনে কোনো পরিবর্তন হয় না, সামান্য পরিমাণ প্রভাবকই যথেষ্ট, এবং প্রতিটি বিক্রিয়ার জন্য নির্দিষ্ট প্রভাবক প্রয়োজন।</p>",
+        },
+        {
+          id: 6,
+          question:
+            "স্পর্শ পদ্ধতিতে H₂SO₄ উৎপাদনে নিচের কোন প্রভাবক ব্যবহৃত হয়?",
+          options: {
+            A: "Fe",
+            B: "Ni",
+            C: "Al₂O₃",
+            D: "V₂O₅",
+          },
+          correct: "D",
+          explanation:
+            "<p>স্পর্শ পদ্ধতিতে সালফিউরিক অ্যাসিড (H₂SO₄) উৎপাদনে ভ্যানাডিয়াম পেন্টাঅক্সাইড (V₂O₅) প্রভাবক হিসেবে ব্যবহৃত হয়। এই প্রক্রিয়ায় সালফার ডাইঅক্সাইড (SO₂) অক্সিজেনের (O₂) সাথে বিক্রিয়া করে সালফার ট্রাইঅক্সাইড (SO₃) উৎপন্ন করে। V₂O₅ এই বিক্রিয়ার হারকে ত্বরান্বিত করে এবং শিল্পক্ষেত্রে এটি অত্যন্ত গুরুত্বপূর্ণ একটি প্রভাবক। পূর্বে প্লাটিনামও ব্যবহৃত হলেও V₂O₅ এখন বেশি প্রচলিত কারণ এটি সস্তা এবং প্রভাবক বিষের প্রতি কম সংবেদনশীল।</p>",
+        },
+        {
+          id: 7,
+          question:
+            "হেবার বস্ পদ্ধতিতে NH₃ শিল্পোৎপাদনে প্রভাবক হিসেবে কোনটি ব্যবহৃত হয়?",
+          options: {
+            A: "Mo",
+            B: "Fe",
+            C: "Ni",
+            D: "V",
+          },
+          correct: "B",
+          explanation:
+            "<p>হেবার-বশ পদ্ধতিতে অ্যামোনিয়া (NH₃) শিল্পোৎপাদনে আয়রন (Fe) প্রভাবক হিসেবে ব্যবহৃত হয়। এই প্রক্রিয়ায় নাইট্রোজেন (N₂) এবং হাইড্রোজেন (H₂) গ্যাস বিক্রিয়া করে অ্যামোনিয়া উৎপন্ন করে। আয়রন প্রভাবক হিসেবে কাজ করে বিক্রিয়ার সক্রিয়করণ শক্তি হ্রাস করে এবং এর গতি বাড়ায়। মলিবডেনাম (Mo) একটি প্রভাবক বিবর্ধক (promoter) হিসেবে আয়রনের কার্যকারিতা বাড়াতে ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 8,
+          question:
+            "অম্লীয় KMnO₄ এবং অক্সালিক এসিড দ্রবণের রিডক্স বিক্রিয়ায় কোনটি অটো প্রভাবক হিসেবে কাজ করে?",
+          options: {
+            A: "MnO₄⁻",
+            B: "Mn²⁺",
+            C: "CrO₂⁻",
+            D: "K⁺",
+          },
+          correct: "B",
+          explanation:
+            "<p>অম্লীয় পটাশিয়াম পারম্যাঙ্গানেট (KMnO₄) এবং অক্সালিক অ্যাসিডের (H₂C₂O₄) মধ্যে রিডক্স বিক্রিয়ায়, উৎপন্ন ম্যাঙ্গানিজ (II) আয়ন (Mn²⁺) অটোপ্রভাবক (autocatalyst) হিসেবে কাজ করে। প্রথম দিকে বিক্রিয়াটি ধীর গতিতে চলে, কিন্তু বিক্রিয়ার উৎপাদ হিসেবে Mn²⁺ আয়ন উৎপন্ন হওয়ার সাথে সাথে বিক্রিয়ার হার দ্রুত বৃদ্ধি পায়। এই Mn²⁺ আয়ন বিক্রিয়ার সক্রিয়করণ শক্তি কমিয়ে বিক্রিয়ার গতি বাড়ায়।</p>",
+        },
+        {
+          id: 9,
+          question: "প্রভাবক রাসায়নিক বিক্রিয়ার কোন বিষয়টি পরিবর্তন করে?",
+          options: {
+            A: "সক্রিয়ণ শক্তি",
+            B: "উৎপাদের স্থিতিশক্তি",
+            C: "বিক্রিয়কের ক্ষমতা",
+            D: "বিক্রিয়া তাপ",
+          },
+          correct: "A",
+          explanation:
+            "<p>প্রভাবক রাসায়নিক বিক্রিয়ার সক্রিয়ণ শক্তি (activation energy) পরিবর্তন করে। এটি বিক্রিয়ার পথকে এমনভাবে পরিবর্তন করে যাতে বিক্রিয়ক অণুগুলো কম শক্তি ব্যয় করে উৎপাদে রূপান্তরিত হতে পারে। এর ফলে বিক্রিয়ার হার বৃদ্ধি পায়, কিন্তু এটি বিক্রিয়ার উৎপাদের স্থিতিশক্তি বা বিক্রিয়া তাপ (ΔH) পরিবর্তন করে না।</p>",
+        },
+        {
+          id: 10,
+          question: "H₂SO₄ উৎপাদনের ক্ষেত্রে প্রভাবক কোনটি?",
+          options: {
+            A: "Fe",
+            B: "Ni",
+            C: "Pt",
+            D: "V₂O₅",
+          },
+          correct: "C",
+          explanation:
+            "<p>সালফিউরিক অ্যাসিড (H₂SO₄) উৎপাদনের স্পর্শ পদ্ধতিতে পূর্বে প্লাটিনাম (Pt) প্রভাবক হিসেবে ব্যবহৃত হতো। যদিও বর্তমানে ভ্যানাডিয়াম পেন্টাঅক্সাইড (V₂O₅) বেশি প্রচলিত কারণ এটি সস্তা এবং প্রভাবক বিষের প্রতি কম সংবেদনশীল, তবে প্লাটিনাম একটি কার্যকরী প্রভাবক হিসেবে বিবেচিত। তাই বিকল্পগুলির মধ্যে Pt সঠিক।</p>",
+        },
+        {
+          id: 11,
+          question:
+            "COOH-COOH + H₂SO₄ + KMnO₄ → K₂SO₄ + MnSO₄ + CO₂ + H₂O; বিক্রিয়ায় Mn²⁺ একটি -",
+          options: {
+            A: "ধনাত্মক প্রভাবক",
+            B: "স্ব-প্রভাবক",
+            C: "ঋণাত্মক প্রভাবক",
+            D: "আবিষ্ট প্রভাবক",
+          },
+          correct: "B",
+          explanation:
+            "<p>অক্সালিক অ্যাসিড এবং পটাশিয়াম পারম্যাঙ্গানেটের এই রিডক্স বিক্রিয়ায়, উৎপাদ হিসেবে সৃষ্ট Mn²⁺ আয়ন বিক্রিয়াটিকে ত্বরান্বিত করে। যে পদার্থ বিক্রিয়ার উৎপাদ হিসেবে উৎপন্ন হয়ে নিজেই বিক্রিয়ার গতি বাড়ায়, তাকে স্ব-প্রভাবক বা অটোপ্রভাবক (autocatalyst) বলে। তাই Mn²⁺ এখানে একটি স্ব-প্রভাবক।</p>",
+        },
+        {
+          id: 12,
+          question:
+            "ক্লোরোফরমের জারণে বিষাক্ত ফসজিন গ্যাস উৎপাদনের ঋণাত্মক প্রভাবক হিসেবে কাজ করে-",
+          options: {
+            A: "গ্লিসারিন",
+            B: "অ্যালকোহল",
+            C: "MnO₂",
+            D: "বায়ু",
+          },
+          correct: "B",
+          explanation:
+            "<p>ক্লোরোফরম (CHCl₃) বায়ু এবং আলোর সংস্পর্শে এসে জারিত হয়ে বিষাক্ত ফসজিন (COCl₂) গ্যাস উৎপন্ন করে। এই ক্ষতিকর বিক্রিয়া রোধ করতে বা এর গতি কমাতে ইথানল বা অ্যালকোহলকে ঋণাত্মক প্রভাবক হিসেবে ব্যবহার করা হয়। অ্যালকোহল ফসজিনের উৎপাদন হ্রাস করে এবং ক্লোরোফরমকে দীর্ঘ সময়ের জন্য সংরক্ষণ করতে সাহায্য করে।</p>",
+        },
+        {
+          id: 13,
+          question: "কোনটি সমসত্ত্ব প্রভাবন?",
+          options: {
+            A: "SO₂ (g) + O₂ (g) → 2SO₃ (g) [NO(g)]",
+            B: "SO₂ (g) + O₂ (g) → 2SO₃ (g) [Pt]",
+            C: "2CO (g) + O₂ (g) → 2CO₂ (g) [Fe]",
+            D: "N₂ (g) + 3H₂ (g) → 2NH₃ (g)",
+          },
+          correct: "A",
+          explanation:
+            "<p>সমসত্ত্ব প্রভাবন (homogeneous catalysis) হলো এমন এক ধরনের প্রভাবন যেখানে প্রভাবক এবং বিক্রিয়ক একই ভৌত অবস্থায় (ফেজ) থাকে। বিকল্প (A) তে, সালফার ডাইঅক্সাইড (SO₂) এবং অক্সিজেন (O₂) উভয়ই গ্যাসীয় অবস্থায় আছে এবং প্রভাবক নাইট্রিক অক্সাইড (NO) ও গ্যাসীয় অবস্থায় আছে। এটি লেড চেম্বার প্রক্রিয়ায় সালফিউরিক অ্যাসিড উৎপাদনে ব্যবহৃত হয়। অন্যান্য বিকল্পগুলোতে বিক্রিয়ক ও প্রভাবকের ভৌত অবস্থা ভিন্ন, যা অসমসত্ত্ব প্রভাবন (heterogeneous catalysis) এর উদাহরণ।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "2H₂O₂ → 2H₂O + O₂; এ বিক্রিয়ায় ঋণাত্মক প্রভাবক হিসেবে কাজ করে কোনটি?",
+          options: {
+            A: "ম্যাঙ্গানিজ ডাইঅক্সাইড",
+            B: "গ্লিসারিন",
+            C: "ভ্যানাডিয়াম পেন্টাঅক্সাইড",
+            D: "প্লাটিনাম",
+          },
+          correct: "B",
+          explanation:
+            "<p>হাইড্রোজেন পারক্সাইড (H₂O₂) এর বিয়োজন একটি স্বতঃস্ফূর্ত প্রক্রিয়া, যা আলো, তাপ বা কিছু প্রভাবকের উপস্থিতিতে দ্রুত হয়। এই বিয়োজনকে ধীর করতে বা রোধ করতে গ্লিসারিনকে ঋণাত্মক প্রভাবক বা স্ট্যাবিলাইজার (stabilizer) হিসেবে ব্যবহার করা হয়। ম্যাঙ্গানিজ ডাইঅক্সাইড এবং প্লাটিনাম সাধারণত ধনাত্মক প্রভাবক হিসেবে H₂O₂ এর বিয়োজনকে ত্বরান্বিত করে।</p>",
+        },
+        {
+          id: 15,
+          question:
+            "অ্যামোনিয়া তৈরিতে প্রভাবক বিবর্ধক হিসেবে কোন ধাতু ব্যবহার করা হয়?",
+          options: {
+            A: "Mn",
+            B: "Mo",
+            C: "Fe",
+            D: "Co",
+          },
+          correct: "B",
+          explanation:
+            "<p>হেবার-বশ পদ্ধতিতে অ্যামোনিয়া (NH₃) উৎপাদনে আয়রন (Fe) প্রধান প্রভাবক হিসেবে ব্যবহৃত হয়। এই প্রক্রিয়ায় আয়রনের কার্যকারিতা বাড়াতে মলিবডেনাম (Mo) প্রভাবক বিবর্ধক (promoter) হিসেবে ব্যবহার করা হয়। মলিবডেনাম আয়রনের পৃষ্ঠতলকে আরও সক্রিয় করে তোলে, যার ফলে বিক্রিয়ার হার আরও বৃদ্ধি পায়।</p>",
+        },
+        {
+          id: 16,
+          question:
+            "খাদ্যদ্রব্য ও বীজ সংরক্ষণের সময় ঋণাত্মক প্রভাবক হিসেবে ব্যবহৃত হয়?",
+          options: {
+            A: "সোডিয়াম বেনজোয়েট",
+            B: "অ্যানিসোল",
+            C: "ফসফরিক এসিড",
+            D: "কোনোটিই নয়",
+          },
+          correct: "A",
+          explanation:
+            "<p>খাদ্যদ্রব্য ও বীজ সংরক্ষণে সোডিয়াম বেনজোয়েট একটি বহুল ব্যবহৃত ঋণাত্মক প্রভাবক বা সংরক্ষণকারী (preservative) হিসেবে কাজ করে। এটি ব্যাকটেরিয়ার বৃদ্ধি এবং অন্যান্য অণুজীবের কার্যকলাপ রোধ করে খাদ্য পচনকে ধীর করে দেয়। ফসফরিক অ্যাসিড খাদ্য শিল্পে ব্যবহৃত হলেও এটি সরাসরি ঋণাত্মক প্রভাবক হিসেবে কাজ করে না, এটি অম্লতা নিয়ন্ত্রক হিসেবে ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 17,
+          question: "নিচের কোনটি সমসত্ত্ব প্রভাবন?",
+          options: {
+            A: "H–COOH (g) + H₂ (g) → CO₂ (g) [Cu]",
+            B: "2SO₂ (g) + O₂ (g) → 2SO₃ (g) [NO]",
+            C: "2CO (g) + O₂ (g) → 2CO₂ (g) [Pt]",
+            D: "N₂ (g) + 3H₂ (g) → 2NH₃ (g) [Fe]",
+          },
+          correct: "B",
+          explanation:
+            "<p>সমসত্ত্ব প্রভাবন হলো এমন একটি প্রক্রিয়া যেখানে বিক্রিয়ক এবং প্রভাবক একই ভৌত অবস্থায় (ফেজ) থাকে। বিকল্প (B) তে, SO₂ (গ্যাস), O₂ (গ্যাস), এবং প্রভাবক NO (গ্যাস) একই গ্যাসীয় অবস্থায় আছে। এটি লেড চেম্বার প্রক্রিয়ায় সালফিউরিক অ্যাসিড তৈরির একটি ধাপ। অন্যান্য বিকল্পগুলোতে বিক্রিয়ক এবং প্রভাবকের ভৌত অবস্থা ভিন্ন, যা অসমসত্ত্ব প্রভাবনের উদাহরণ।</p>",
+        },
+        {
+          id: 18,
+          question:
+            "কোন নিয়ামক/নিয়ামকগুলো বিক্রিয়ার সক্রিয়ণ শক্তি পরিবর্তন করতে পারে?",
+          options: {
+            A: "তাপমাত্রা",
+            B: "চাপ",
+            C: "প্রভাবক",
+            D: "সবগুলো",
+          },
+          correct: "C",
+          explanation:
+            "<p>শুধুমাত্র প্রভাবক (catalyst) রাসায়নিক বিক্রিয়ার সক্রিয়ণ শক্তি পরিবর্তন করতে পারে। প্রভাবক একটি বিকল্প বিক্রিয়া পথ প্রদান করে যার সক্রিয়ণ শক্তি কম থাকে, ফলে বিক্রিয়ার হার বৃদ্ধি পায়। তাপমাত্রা, চাপ, এবং বিক্রিয়কের ঘনমাত্রা বিক্রিয়ার হারকে প্রভাবিত করে, কিন্তু তারা সরাসরি সক্রিয়ণ শক্তিকে পরিবর্তন করে না; বরং তারা সংঘর্ষের হার বা কার্যকর সংঘর্ষের সংখ্যা পরিবর্তন করে।</p>",
+        },
+        {
+          id: 19,
+          question:
+            "2KClO₃ → 2KCl + 3O₂; বিক্রিয়ায় MnO₂ কোন ধরনের প্রভাবক হিসেবে কাজ করে?",
+          options: {
+            A: "ধনাত্মক প্রভাবক",
+            B: "ঋণাত্মক প্রভাবক",
+            C: "অটো প্রভাবক",
+            D: "আবিষ্ট প্রভাবক",
+          },
+          correct: "A",
+          explanation:
+            "<p>পটাশিয়াম ক্লোরেট (KClO₃) থেকে অক্সিজেন (O₂) গ্যাস প্রস্তুতির সময় ম্যাঙ্গানিজ ডাইঅক্সাইড (MnO₂) একটি ধনাত্মক প্রভাবক (positive catalyst) হিসেবে কাজ করে। MnO₂ বিক্রিয়ার সক্রিয়ণ শক্তি হ্রাস করে, যার ফলে KClO₃ এর বিয়োজন দ্রুত সম্পন্ন হয় এবং তুলনামূলকভাবে কম তাপমাত্রাতেই অক্সিজেন উৎপন্ন হয়। MnO₂ বিক্রিয়া শেষে অপরিবর্তিত থাকে।</p>",
+        },
+        {
+          id: 20,
+          question:
+            "কোনটি রাসায়নিক বিক্রিয়ায় অটোপ্রভাবক হিসেবে বিক্রিয়া করে?",
+          options: {
+            A: "KMnO₄",
+            B: "Na₂SO₃",
+            C: "H₂SO₄",
+            D: "H₃PO₄",
+          },
+          correct: "A",
+          explanation:
+            "<p>পটাশিয়াম পারম্যাঙ্গানেট (KMnO₄) একটি শক্তিশালী জারক। যখন এটি অক্সালিক অ্যাসিডের সাথে বিক্রিয়া করে, তখন উৎপাদ হিসেবে Mn²⁺ আয়ন তৈরি হয়। এই Mn²⁺ আয়ন নিজেই বিক্রিয়ার গতিকে ত্বরান্বিত করে, যা একটি অটোপ্রভাবক (autocatalyst) এর উদাহরণ। তাই, KMnO₄ এর বিক্রিয়ায় Mn²⁺ অটোপ্রভাবক হিসেবে কাজ করে।</p>",
+        },
+        {
+          id: 21,
+          question:
+            "কোনটি শিল্পক্ষেত্রে মিথানল উৎপাদনে প্রভাবক হিসেবে কাজ করে?",
+          options: {
+            A: "Pt অথবা V₂O₅",
+            B: "Pt অথবা Rh",
+            C: "Co অথবা Al₂O₃",
+            D: "ZnO অথবা Cr₂O₃",
+          },
+          correct: "D",
+          explanation:
+            "<p>শিল্পক্ষেত্রে মিথানল (CH₃OH) উৎপাদনে কার্বন মনোক্সাইড (CO) এবং হাইড্রোজেনের (H₂) বিক্রিয়ায় সাধারণত জিঙ্ক অক্সাইড (ZnO) এবং ক্রোমিক অক্সাইড (Cr₂O₃) এর মিশ্রণ প্রভাবক হিসেবে ব্যবহৃত হয়। এই প্রভাবক মিশ্রণটি বিক্রিয়াকে কার্যকরভাবে নিয়ন্ত্রণ করে এবং উচ্চ ফলন নিশ্চিত করে।</p>",
+        },
+        {
+          id: 22,
+          question:
+            "পটাশিয়াম ক্লোরাইট থেকে অক্সিজেন গ্যাস প্রস্তুতির সময় ধনাত্মক প্রভাবক হিসেবে কাজ করে-",
+          options: {
+            A: "H₃PO₄",
+            B: "HBr",
+            C: "Pt",
+            D: "MnO₂",
+          },
+          correct: "D",
+          explanation:
+            "<p>পটাশিয়াম ক্লোরেট (KClO₃) থেকে অক্সিজেন গ্যাস প্রস্তুতির সময় ম্যাঙ্গানিজ ডাইঅক্সাইড (MnO₂) একটি ধনাত্মক প্রভাবক হিসেবে ব্যবহৃত হয়। MnO₂ এর উপস্থিতিতে KClO₃ অপেক্ষাকৃত কম তাপমাত্রায় দ্রুত বিয়োজিত হয়ে অক্সিজেন গ্যাস উৎপন্ন করে। এটি পরীক্ষাগারে অক্সিজেন তৈরির একটি পরিচিত পদ্ধতি।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                            <label class="option" data-option="${option}">
+                                              <div class="circle">${option}</div>
+                                              <span class="option-text">${question.options[option]}</span>
+                                            </label>
+                                          `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                               <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                               <div class="explanation-content">
+                                                 <div class="explanation-label">ব্যাখ্যা:</div>
+                                                 ${question.explanation}
+                                               </div>
+                                             </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                          <p class="question-label">${
+                                            index + 1
+                                          }. ${question.question}</p>
+                                          <div class="options">
+                                            ${optionsHTML}
+                                          </div>
+                                          ${explanationHTML}
+                                        `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
